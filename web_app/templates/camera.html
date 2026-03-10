@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Mark Attendance</h2>
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Face Attendance System</title>
+
+<style>
+
+body{
+font-family: Arial;
+text-align:center;
+background:#f5f5f5;
+}
+
+video{
+border:3px solid black;
+border-radius:10px;
+}
+
+button{
+padding:10px 20px;
+font-size:18px;
+margin-top:20px;
+cursor:pointer;
+}
+
+#result{
+margin-top:20px;
+font-size:22px;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Face Recognition Attendance</h1>
+
+<video id="video" width="400" height="300" autoplay></video>
+
+<br>
+
+<button onclick="capture()">Mark Attendance</button>
+
+<p id="result"></p>
+
+<script>
+
+const video = document.getElementById("video")
+
+navigator.mediaDevices.getUserMedia({ video:true })
+.then(stream=>{
+video.srcObject = stream
+})
+
+
+function capture(){
+
+const canvas = document.createElement("canvas")
+
+canvas.width = video.videoWidth
+canvas.height = video.videoHeight
+
+const ctx = canvas.getContext("2d")
+
+ctx.drawImage(video,0,0)
+
+const image = canvas.toDataURL("image/jpeg")
+
+
+navigator.geolocation.getCurrentPosition(function(position){
+
+const latitude = position.coords.latitude
+const longitude = position.coords.longitude
+
+
+fetch("/verify",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+image:image,
+latitude:latitude,
+longitude:longitude
+})
+
+})
+.then(res=>res.json())
+.then(data=>{
+
+document.getElementById("result").innerHTML = JSON.stringify(data)
+
+})
+
+})
+
+}
+
+</script>
+
+</body>
+
+</html>
+{% endblock %}

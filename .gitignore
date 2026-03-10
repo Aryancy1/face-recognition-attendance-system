@@ -1,0 +1,6 @@
+tf_gpu_env/
+__pycache__/
+*.pyc
+dataset/
+embeddings.pkl
+attendance.db
