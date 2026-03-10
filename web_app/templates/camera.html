@@ -3,114 +3,89 @@
 {% block content %}
 
 <h2>Mark Attendance</h2>
-<!DOCTYPE html>
-<html>
 
-<head>
+<div style="text-align:center">
 
-<title>Face Attendance System</title>
+<h3>Face Recognition Attendance</h3>
 
-<style>
+<video id="video" width="400" height="300" autoplay style="border:3px solid black; border-radius:10px;"></video>
 
-body{
-font-family: Arial;
-text-align:center;
-background:#f5f5f5;
-}
+<br><br>
 
-video{
-border:3px solid black;
-border-radius:10px;
-}
+<button onclick="capture()" class="btn btn-primary">
+Mark Attendance
+</button>
 
-button{
-padding:10px 20px;
-font-size:18px;
-margin-top:20px;
-cursor:pointer;
-}
+<p id="result" style="margin-top:20px; font-size:20px; font-weight:bold;"></p>
 
-#result{
-margin-top:20px;
-font-size:22px;
-font-weight:bold;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<h1>Face Recognition Attendance</h1>
-
-<video id="video" width="400" height="300" autoplay></video>
-
-<br>
-
-<button onclick="capture()">Mark Attendance</button>
-
-<p id="result"></p>
+</div>
 
 <script>
 
 const video = document.getElementById("video")
 
+// Start webcam
 navigator.mediaDevices.getUserMedia({ video:true })
 .then(stream=>{
-video.srcObject = stream
+    video.srcObject = stream
 })
-
+.catch(err=>{
+    console.log("Camera error:", err)
+})
 
 function capture(){
 
-const canvas = document.createElement("canvas")
+    const canvas = document.createElement("canvas")
 
-canvas.width = video.videoWidth
-canvas.height = video.videoHeight
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
 
-const ctx = canvas.getContext("2d")
+    const ctx = canvas.getContext("2d")
 
-ctx.drawImage(video,0,0)
+    // Capture frame from video
+    ctx.drawImage(video,0,0)
 
-const image = canvas.toDataURL("image/jpeg")
+    const image = canvas.toDataURL("image/jpeg")
 
+    // Get GPS location
+    navigator.geolocation.getCurrentPosition(function(position){
 
-navigator.geolocation.getCurrentPosition(function(position){
+        const latitude = position.coords.latitude
+        const longitude = position.coords.longitude
 
-const latitude = position.coords.latitude
-const longitude = position.coords.longitude
+        fetch("/verify",{
 
+            method:"POST",
 
-fetch("/verify",{
+            headers:{
+                "Content-Type":"application/json"
+            },
 
-method:"POST",
+            body:JSON.stringify({
+                image:image,
+                latitude:latitude,
+                longitude:longitude
+            })
 
-headers:{
-"Content-Type":"application/json"
-},
+        })
+        .then(res=>res.json())
+        .then(data=>{
 
-body:JSON.stringify({
-image:image,
-latitude:latitude,
-longitude:longitude
-})
+            // Display response
+            document.getElementById("result").innerHTML =
+                "Status: " + data.status +
+                "<br>Name: " + (data.name || "Unknown") +
+                "<br>Confidence: " + (data.confidence || 0) + "%"
 
-})
-.then(res=>res.json())
-.then(data=>{
+        })
+        .catch(err=>{
+            console.log("Error:", err)
+        })
 
-document.getElementById("result").innerHTML = JSON.stringify(data)
-
-})
-
-})
+    })
 
 }
 
 </script>
 
-</body>
-
-</html>
 {% endblock %}
